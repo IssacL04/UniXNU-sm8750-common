@@ -1,0 +1,47 @@
+/ {
+    #address-cells = <2>;
+    #size-cells = <2>;
+    cpus {
+        #address-cells = <2>;
+        #size-cells = <0>;
+        timebase-frequency = <19200000>;
+        cpu0: cpu@0 {
+            device_type = "cpu";
+            compatible = "arm,armv8";
+            reg = <0 0>;
+            status = "disabled";
+        };
+    };
+    soc {
+        compatible = "simple-bus";
+        #address-cells = <2>;
+        #size-cells = <2>;
+        ranges;
+        gic: interrupt-controller@16000000 {
+            compatible = "arm,gic-v3";
+            unixnu,adt-name = "intc";
+            interrupt-controller;
+            #interrupt-cells = <3>;
+            #address-cells = <0>;
+            reg = <0 0x16000000 0 0x10000>, <0 0x16080000 0 0x200000>;
+            redistributor-stride = <0 0x40000>;
+        };
+        gcc: clock-controller@100000 {
+            compatible = "qcom,sm8750-gcc";
+            reg = <0 0x100000 0 0x1f4200>;
+            #clock-cells = <1>;
+            status = "disabled";
+        };
+        ufs: ufs@1d84000 {
+            compatible = "qcom,sm8750-ufshc";
+            reg = <0 0x1d84000 0 0x3000>;
+            status = "disabled";
+        };
+        smmu: iommu@15000000 {
+            compatible = "qcom,sm8750-smmu-500";
+            reg = <0 0x15000000 0 0x100000>;
+            #iommu-cells = <1>;
+            status = "disabled";
+        };
+    };
+};
