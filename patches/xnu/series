@@ -1,1 +1,2 @@
-# No SM8750-only XNU patches; architecture patches are inherited.
+# The selected Apple PMGR compatibility driver needs this common bootstrap hook.
+arch:../../../patches/xnu/sheng-platform-power.patch
