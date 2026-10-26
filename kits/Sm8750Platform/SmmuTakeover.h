@@ -24,7 +24,8 @@ static unsigned ufsSmmuAddressBits(unsigned code)
 }
 // One attempt with a given context bank (counted from the top). The caller falls back to lower banks when this one is held by another stream.
 template <class Read>
-static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes, Read read, unsigned bankFromTop)
+static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes, Read read, unsigned bankFromTop,
+                                unsigned mapBytes = kUfsSmmuMapBytes)
 {
   UfsSmmuPlan p;
   uint32_t idr0 = read(0x20), idr2 = read(0x28);
@@ -42,7 +43,7 @@ static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes
   unsigned banks = idr1 & 255;
   p.pages = 1U << (((idr1 >> 28) & 7) + 1);
   if ((idr1 >> 31) || !count || p.pages > 128 || banks < 2 || banks > 128 ||
-      (p.pages + banks) * 4096 > kUfsSmmuMapBytes) {
+      (p.pages + banks) * 4096 > mapBytes) {
     p.error = "unsupported SMMU geometry"; return p;
   }
   // Qualcomm qcom_smmu_cfg_probe: extra groups have non-architectural behavior.
@@ -89,12 +90,13 @@ static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes
 // The UFS stream's context bank: the top bank first. A stream mapping left behind by an earlier run (or by another OS that used the SMMU before a
 // warm reset) can still point another stream at that bank; rather than refuse to boot, the next banks down are tried, each held to the same checks
 // (no other valid stream maps it, translation off). Any other refusal (a conflicting mapping of our own stream, no free group, unsupported geometry)
-// is final and is reported as the first attempt saw it.
+// is final. If all attempts fail, prefer our stream's conflict over another stream's occupied bank.
 template <class Read>
-static UfsSmmuPlan planUfsSmmu(uint16_t stream, uint64_t dma, uint64_t bytes, Read read)
+static UfsSmmuPlan planUfsSmmu(uint16_t stream, uint64_t dma, uint64_t bytes, Read read,
+                            unsigned mapBytes = kUfsSmmuMapBytes)
 {
   enum {kBankAttempts = 8};
-  UfsSmmuPlan first = planUfsSmmuBank(stream, dma, bytes, read, 0);
+  UfsSmmuPlan first = planUfsSmmuBank(stream, dma, bytes, read, 0, mapBytes);
   if (!first.error) return first;
   // "conflicting" is retried too: our own stream may already sit on a lower bank from an earlier run that had to fall back.
   auto retryable = [](const char *e) {
@@ -102,12 +104,15 @@ static UfsSmmuPlan planUfsSmmu(uint16_t stream, uint64_t dma, uint64_t bytes, Re
            !__builtin_strcmp(e, "conflicting UFS stream mapping");
   };
   if (!retryable(first.error)) return first;
+  UfsSmmuPlan failure = first;
   for (unsigned attempt = 1; attempt < kBankAttempts; ++attempt) {
-    UfsSmmuPlan next = planUfsSmmuBank(stream, dma, bytes, read, attempt);
+    UfsSmmuPlan next = planUfsSmmuBank(stream, dma, bytes, read, attempt, mapBytes);
     if (!next.error) return next;
+    // Report our stream's conflict rather than an unrelated occupied top bank.
+    if (!__builtin_strcmp(next.error, "conflicting UFS stream mapping")) failure = next;
     if (!retryable(next.error)) break;
   }
-  return first;
+  return failure;
 }
 
 // The caller must first quiesce the UFS queue. The planner refuses other
