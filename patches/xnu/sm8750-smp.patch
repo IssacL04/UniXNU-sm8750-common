@@ -13,11 +13,12 @@
  #endif  /* ARM64_BOARD_CONFIG_BCM2837 */
 --- a/pexpert/pexpert/arm64/BCM2837.h
 +++ b/pexpert/pexpert/arm64/BCM2837.h
-@@ -7,6 +7,7 @@
+@@ -7,6 +7,8 @@
  
  #define NO_MONITOR 1
  #define NO_ECORE 1
 +#define HAS_CLUSTER 1
++#define NO_CPU_OVRD 1
  
  #define BCM2837
  #define BCM2837_BRINGUP
