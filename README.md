@@ -2,7 +2,9 @@
 
 Shared GICv3, 19.2 MHz timer, UFS/GCC and SMMU resources used by the OnePlus 13T PKX110 port. The initial extraction preserves the register operations from UniXNU-Pagani-Drivers `0d0b413de6b2caecf2f3128bb70f345342190bcd`.
 
-`PeripheralIO.h` adds bounded SPMI v7 observer reads, QUP1 S4 clock adoption and DSI command-FIFO writes. Board pin numbers, PMIC peripherals, panel limits and physical mappings remain in the device profile. The portable peripheral tests exercise these operations with register models; no new hardware result is claimed. Clock adoption requires boot firmware microcode and supply state, and DSI commands preserve existing scanout timing.
+`PeripheralIO.h` adds bounded SPMI v7 observer reads, QUP1 S4 clock adoption, checked SPI delay programming and DSI command-FIFO writes. Board pin numbers, PMIC peripherals, panel limits and physical mappings remain in the device profile. The portable peripheral tests exercise these operations with register models; no new hardware result is claimed. Clock adoption requires boot firmware microcode, and DSI commands preserve existing scanout timing.
+
+`Rpmh.h` resolves exact VRM names from the bounded command database and submits voltage/mode/enable requests through an idle apps DRV-2 ACTIVE TCS. It checks register readback and all command acknowledgements, preserves other TCSes/IRQ bits and retains a timed-out slot without reuse. The caller supplies the board resource names and voltages and serializes requests. RSC v2/v3 layouts are supported; unknown layouts or non-idle slots are refused. Host fault models pass; rail voltage and boot behavior still require device validation.
 
 `SmmuTakeover.h` also accepts a caller-supplied MMIO extent so QUP SE DMA can reuse its checked, exclusive VA64 bypass planner. Existing UFS defaults and firmware takeover rules remain unchanged. QUP mappings receive no firmware-bank exception; conflicting streams are reported without writes. Tests cover QUP/UFS coexistence and insufficient mapping extents in both existing build configurations.
 

@@ -12,6 +12,15 @@ struct peripheral_io {
 static inline uint32_t peripheral_read(const struct peripheral_io *io,uint32_t reg) {return io->read(io->context,reg);}
 static inline void peripheral_write(const struct peripheral_io *io,uint32_t reg,uint32_t value) {io->write(io->context,reg,value);}
 
+#define SM8750_SPI_DELAY_COUNTERS 0x278
+static inline int sm8750_spi_timing(const struct peripheral_io *se,unsigned cs,unsigned words,uint32_t *readback) {
+    if (cs>0x3ff || words>0x3ff || !readback) return -22;
+    uint32_t value=(cs<<10)|words;
+    peripheral_write(se,SM8750_SPI_DELAY_COUNTERS,value);
+    *readback=peripheral_read(se,SM8750_SPI_DELAY_COUNTERS);
+    return (*readback&0xfffff)==value?0:-5;
+}
+
 // Observer reads need no peripheral write ownership; prefer the local EE's mapping.
 static inline int spmi_find(const struct peripheral_io *core,const struct peripheral_io *cnfg,unsigned ppid,unsigned ee) {
     uint32_t version=peripheral_read(core,0),count=peripheral_read(core,4)&0x7ff;
