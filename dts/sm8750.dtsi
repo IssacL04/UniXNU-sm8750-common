@@ -11,6 +11,52 @@
             reg = <0 0>;
             status = "disabled";
         };
+        cpu1: cpu@100 {
+            device_type = "cpu";
+            compatible = "arm,armv8";
+            reg = <0 0x100>;
+            status = "disabled";
+        };
+        cpu2: cpu@200 {
+            device_type = "cpu";
+            compatible = "arm,armv8";
+            reg = <0 0x200>;
+            status = "disabled";
+        };
+        cpu3: cpu@300 {
+            device_type = "cpu";
+            compatible = "arm,armv8";
+            reg = <0 0x300>;
+            status = "disabled";
+        };
+        cpu4: cpu@400 {
+            device_type = "cpu";
+            compatible = "arm,armv8";
+            reg = <0 0x400>;
+            status = "disabled";
+        };
+        cpu5: cpu@500 {
+            device_type = "cpu";
+            compatible = "arm,armv8";
+            reg = <0 0x500>;
+            status = "disabled";
+        };
+        cpu6: cpu@10000 {
+            device_type = "cpu";
+            compatible = "arm,armv8";
+            reg = <0 0x10000>;
+            status = "disabled";
+        };
+        cpu7: cpu@10100 {
+            device_type = "cpu";
+            compatible = "arm,armv8";
+            reg = <0 0x10100>;
+            status = "disabled";
+        };
+    };
+    psci {
+        compatible = "arm,psci-1.0";
+        method = "smc";
     };
     soc {
         compatible = "simple-bus";
