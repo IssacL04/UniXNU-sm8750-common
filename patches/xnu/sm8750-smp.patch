@@ -55,3 +55,15 @@
  #else
  	and		x0, x15, #0xFF						// CPU number is in MPIDR Affinity Level 0
  #endif
+--- a/osfmk/kern/sched_clutch.c
++++ b/osfmk/kern/sched_clutch.c
+@@ -2757,7 +2757,8 @@
+ 	.processor_runq_stats_count_sum                 = sched_clutch_runq_stats_count_sum,
+ 	.processor_bound_count                          = sched_clutch_processor_bound_count,
+ 	.thread_update_scan                             = sched_clutch_thread_update_scan,
+-	.multiple_psets_enabled                         = TRUE,
++	/* shortcut: one SM8750 Clutch pset; enable per-cluster scheduling only with Edge support. */
++	.multiple_psets_enabled                         = FALSE,
+ 	.sched_groups_enabled                           = FALSE,
+ 	.avoid_processor_enabled                        = TRUE,
+ 	.thread_avoid_processor                         = sched_clutch_thread_avoid_processor,
