@@ -89,5 +89,41 @@
             #iommu-cells = <1>;
             status = "disabled";
         };
+        gpu: gpu@3d00000 {
+            compatible = "qcom,adreno-gpu-gen8-0-1", "qcom,kgsl-3d0";
+            reg = <0 0x3d00000 0 0x40000>,
+                  <0 0x3d50000 0 0x10000>,
+                  <0 0x3d61000 0 0x3000>,
+                  <0 0x3d9e000 0 0x2000>;
+            reg-names = "kgsl_3d0_reg_memory", "rscc", "cx_dbgc", "cx_misc";
+            interrupt-parent = <&gic>;
+            interrupts = <0 300 4>, <0 80 4>;
+            interrupt-names = "kgsl_3d0_irq", "cx_host_irq";
+            status = "disabled";
+        };
+        gmu: gmu@3d37000 {
+            compatible = "qcom,gen8-gmu";
+            reg = <0 0x3d37000 0 0x68000>, <0 0x3d40000 0 0x10000>;
+            reg-names = "gmu", "gmu_ao_blk_dec0";
+            interrupt-parent = <&gic>;
+            interrupts = <0 304 4>, <0 305 4>;
+            interrupt-names = "hfi", "gmu";
+            status = "disabled";
+        };
+        gpucc: clock-controller@3d90000 {
+            compatible = "qcom,sun-gpucc", "syscon";
+            reg = <0 0x3d90000 0 0x9800>;
+            #clock-cells = <1>;
+            #power-domain-cells = <1>;
+            #reset-cells = <1>;
+            status = "disabled";
+        };
+        gpu_smmu: iommu@3da0000 {
+            compatible = "qcom,qsmmu-v500", "qcom,adreno-smmu";
+            reg = <0 0x3da0000 0 0x40000>;
+            #iommu-cells = <2>;
+            dma-coherent;
+            status = "disabled";
+        };
     };
 };

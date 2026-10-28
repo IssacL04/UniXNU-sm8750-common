@@ -2,6 +2,8 @@
 
 Shared GICv3, 19.2 MHz timer, UFS/GCC and SMMU resources used by the OnePlus 13T PKX110 port. The initial extraction preserves the register operations from UniXNU-Pagani-Drivers `0d0b413de6b2caecf2f3128bb70f345342190bcd`.
 
+The DTSI also describes disabled Adreno 830 GPU, Gen8 GMU, GPUCC and GPU SMMU nodes. Their MMIO windows and GPU/GMU interrupts come from the PKX110 Android runtime DTB recorded in the device repository. The device DTS supplies its observed chip ID `0x44050001` and model `Adreno830v2`. These nodes provide resource inputs for an A830 backend; no GPU driver or clock/power sequence is enabled by this change.
+
 `PeripheralIO.h` adds bounded SPMI v7 observer reads, QUP1 S4 clock adoption, checked SPI delay programming and DSI command-FIFO writes. Board pin numbers, PMIC peripherals, panel limits and physical mappings remain in the device profile. The portable peripheral tests exercise these operations with register models; no new hardware result is claimed. Clock adoption requires boot firmware microcode, and DSI commands preserve existing scanout timing.
 
 `Rpmh.h` resolves exact VRM names from the bounded command database and submits voltage/mode/enable requests through an idle apps DRV-2 ACTIVE TCS. It checks register readback and all command acknowledgements, preserves other TCSes/IRQ bits and retains a timed-out slot without reuse. The caller supplies the board resource names and voltages and serializes requests. RSC v2/v3 layouts are supported; unknown layouts or non-idle slots are refused. Host fault models pass; rail voltage and boot behavior still require device validation.
