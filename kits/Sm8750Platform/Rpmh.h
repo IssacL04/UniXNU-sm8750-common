@@ -43,10 +43,17 @@ static inline int rpmh_write_checked(const struct peripheral_io *io,uint32_t reg
 
 // SM8750 apps DRV-2: DT assigns TCS 0..2 to ACTIVE, with base 0xd00 and stride 0x2a0.
 // Caller owns these requests serially; sleep/wake TCSes and other IRQ bits are preserved.
-static inline int sm8750_rpmh_vrm_enable(const struct peripheral_io *rsc,uint32_t address,
-                                       unsigned millivolts,struct rpmh_result *result) {
+struct rpmh_command {uint32_t address,value;};
+static inline int sm8750_rpmh_write(const struct peripheral_io *rsc,const struct rpmh_command *commands,
+                                  unsigned count,struct rpmh_result *result) {
     if (!rsc || !rsc->read || !rsc->write || !rsc->delay || !result ||
-        (address&15) || (address>>16)!=4 || !millivolts || millivolts>8191) return -22;
+        !commands || !count || count>3) return -22;
+    for (unsigned i=0;i<count;++i) {
+        unsigned slave=commands[i].address>>16;
+        if ((commands[i].address&3) || (slave!=3 && slave!=4 && slave!=5) ||
+            (slave==3 && commands[i].value>255) || (slave==4 && commands[i].value>8191) ||
+            (slave==5 && (commands[i].value&0x90000000u))) return -22;
+    }
     struct rpmh_result initial={0,0xffffffffu,0,{0,0,0}};*result=initial;
     result->hardware=peripheral_read(rsc,0);
     unsigned major=(result->hardware>>16)&255;
@@ -68,16 +75,15 @@ static inline int sm8750_rpmh_vrm_enable(const struct peripheral_io *rsc,uint32_
     uint32_t irq=peripheral_read(rsc,0xd00);
     int rc=rpmh_write_checked(rsc,0xd00,irq&~bit);
     if (rc) return rc;
-    const unsigned offsets[3]={0,8,4};
-    const uint32_t values[3]={millivolts,7,1}; // Voltage, high-power mode, then enable.
-    for (unsigned i=0;!rc && i<3;++i) {
+    for (unsigned i=0;!rc && i<count;++i) {
         unsigned at=base+msg+i*stride;
         rc=rpmh_write_checked(rsc,at,0x10108);
-        if (!rc) rc=rpmh_write_checked(rsc,at+4,address+offsets[i]);
-        if (!rc) rc=rpmh_write_checked(rsc,at+8,values[i]);
+        if (!rc) rc=rpmh_write_checked(rsc,at+4,commands[i].address);
+        if (!rc) rc=rpmh_write_checked(rsc,at+8,commands[i].value);
     }
-    if (!rc) rc=rpmh_write_checked(rsc,base+wait,7);
-    if (!rc) rc=rpmh_write_checked(rsc,base+enable,7);
+    const uint32_t mask=(1u<<count)-1;
+    if (!rc) rc=rpmh_write_checked(rsc,base+wait,mask);
+    if (!rc) rc=rpmh_write_checked(rsc,base+enable,mask);
     if (!rc) rc=rpmh_write_checked(rsc,base+control,1u<<16);
     if (!rc) {
         peripheral_write(rsc,base+control,(1u<<16)|(1u<<24));
@@ -86,7 +92,7 @@ static inline int sm8750_rpmh_vrm_enable(const struct peripheral_io *rsc,uint32_
             rsc->delay(rsc->context,1000);
             result->status=peripheral_read(rsc,base+status);
             unsigned done=result->status==1;
-            for (unsigned i=0;i<3;++i) {
+            for (unsigned i=0;i<count;++i) {
                 uint32_t v=peripheral_read(rsc,base+msg+12+i*stride);result->command[i]=v;
                 done&=v!=0xffffffffu && (v&0x10100)==0x10100;
             }
@@ -102,4 +108,12 @@ static inline int sm8750_rpmh_vrm_enable(const struct peripheral_io *rsc,uint32_
     uint32_t current=peripheral_read(rsc,0xd00);
     if (rpmh_write_checked(rsc,0xd00,(current&~bit)|(irq&bit))) return -5;
     return rc;
+}
+
+static inline int sm8750_rpmh_vrm_enable(const struct peripheral_io *rsc,uint32_t address,
+                                       unsigned millivolts,struct rpmh_result *result) {
+    if ((address&15) || (address>>16)!=4 || !millivolts || millivolts>8191) return -22;
+    // Voltage, high-power mode, then enable.
+    const struct rpmh_command commands[3]={{address,millivolts},{address+8,7},{address+4,1}};
+    return sm8750_rpmh_write(rsc,commands,3,result);
 }

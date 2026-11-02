@@ -118,6 +118,12 @@
             #reset-cells = <1>;
             status = "disabled";
         };
+        gpu_gx: clock-controller@3d68024 {
+            compatible = "qcom,sun-gx_clkctl";
+            reg = <0 0x3d68024 0 0x8>;
+            #power-domain-cells = <1>;
+            status = "disabled";
+        };
         gpu_smmu: iommu@3da0000 {
             compatible = "qcom,qsmmu-v500", "qcom,adreno-smmu";
             reg = <0 0x3da0000 0 0x40000>;
