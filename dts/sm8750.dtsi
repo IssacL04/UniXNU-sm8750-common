@@ -99,6 +99,10 @@
             interrupt-parent = <&gic>;
             interrupts = <0 300 4>, <0 80 4>;
             interrupt-names = "kgsl_3d0_irq", "cx_host_irq";
+            /* gfx3d_user (SID 0) and gfx3d_lpac (SID 1) of the runtime DT kgsl-iommu children */
+            iommus = <&gpu_smmu 0 0>, <&gpu_smmu 1 0>;
+            nvmem-cells = <&gpu_speed_bin>;
+            nvmem-cell-names = "speed_bin";
             status = "disabled";
         };
         gmu: gmu@3d37000 {
@@ -108,6 +112,7 @@
             interrupt-parent = <&gic>;
             interrupts = <0 304 4>, <0 305 4>;
             interrupt-names = "hfi", "gmu";
+            iommus = <&gpu_smmu 5 0>;
             status = "disabled";
         };
         gpucc: clock-controller@3d90000 {
@@ -129,6 +134,38 @@
             reg = <0 0x3da0000 0 0x40000>;
             #iommu-cells = <2>;
             dma-coherent;
+            /* One global fault interrupt (SPI 674), then the 25 context banks in bank order (runtime DT kgsl-smmu). */
+            #global-interrupts = <1>;
+            interrupt-parent = <&gic>;
+            interrupts = <0 674 4>,
+                         <0 678 4>, <0 679 4>, <0 680 4>, <0 681 4>, <0 682 4>,
+                         <0 683 4>, <0 684 4>, <0 685 4>, <0 686 4>, <0 687 4>,
+                         <0 688 4>, <0 422 4>, <0 476 4>, <0 574 4>, <0 575 4>,
+                         <0 576 4>, <0 577 4>, <0 660 4>, <0 662 4>, <0 665 4>,
+                         <0 666 4>, <0 667 4>, <0 669 4>, <0 670 4>, <0 700 4>;
+            status = "disabled";
+        };
+        qfprom: efuse@221c8000 {
+            compatible = "qcom,sm8750-qfprom", "qcom,qfprom";
+            reg = <0 0x221c8000 0 0x1000>;
+            #address-cells = <1>;
+            #size-cells = <1>;
+            read-only;
+            status = "disabled";
+            gpu_speed_bin: gpu-speed-bin@138 {
+                reg = <0x138 0x2>;
+                bits = <0 9>;
+            };
+        };
+        llcc: cache-controller@24800000 {
+            compatible = "qcom,sm8750-llcc";
+            reg = <0 0x24800000 0 0x200000>, <0 0x25800000 0 0x200000>,
+                  <0 0x24c00000 0 0x200000>, <0 0x25c00000 0 0x200000>,
+                  <0 0x26800000 0 0x200000>, <0 0x26c00000 0 0x200000>;
+            reg-names = "llcc0_base", "llcc1_base", "llcc2_base", "llcc3_base",
+                        "llcc_broadcast_or_base", "llcc_broadcast_and_base";
+            interrupt-parent = <&gic>;
+            interrupts = <0 266 4>;
             status = "disabled";
         };
     };
